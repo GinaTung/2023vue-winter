@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+</head>
+
+<body>
+
+  <div>
+    <input type="email" id="email">
+    <input type="password" id="password">
+    <button type="button" id="login">登入</button>
+  </div>
+
+  <div>
+    <button type="button" id="check">確認是否登入</button>
+    <button type="button" id="getProducts">取得後台的產品列表</button>
+    <button type="button" id="addProduct">新增一個產品</button>
+    <button type="button" id="delProduct">刪除一個產品</button>
+  </div>
+
+  <script>
+    // https://vue3-course-api.hexschool.io/v2/admin/signin
+    const url = 'https://vue3-course-api.hexschool.io/v2/'; // 請加入站點
+    const path = 'yuling202202'; // 請加入個人 API Path
+
+    // #1 如何串接 API 資料
+
+    const emailInput = document.querySelector('#email');
+    const pwInput = document.querySelector('#password');
+    const loginBtn = document.querySelector('#login');
+    const checkBtn = document.querySelector('#check');
+    const getProductsBtn = document.querySelector('#getProducts');
+    const addProductBtn = document.querySelector('#addProduct');
+    const delProductBtn = document.querySelector('#delProduct');
+
+    loginBtn.addEventListener('click', login);
+
+    function login() {
+      const username = emailInput.value;
+      const password = pwInput.value;
+
+      const user = {
+        username,
+        password
+      }
+
+
+      // #2 發送 API 至遠端並登入（並儲存 Token）
+      axios.post(`${url}/admin/signin`, user)
+        // 成功的結果
+        .then((res) => {
+          console.log(res);
+          // unix timestamp顯示為uid
+          // token儲存cookie裡，下次到此頁面時也會讀取保留在此cookie資料
+          // coolie資訊:https://developer.mozilla.org/zh-CN/docs/Web/API/Document/cookie#%E7%A4%BA%E4%BE%8B2_%E5%BE%97%E5%88%B0%E5%90%8D%E4%B8%BAtest2%E7%9A%84cookie
+          const { token, expired } = res.data;
+          // 顯示token及到期日
+          console.log(token, expired);
+          // hexToken為自定義名稱需與下方驗證名稱相同
+          document.cookie = `hexToken=${token}; expeires=${new Date(expired)};`
+        })
+        // 失敗結果
+        .catch((error) => {
+          console.log(error);
+          // 會出現錯誤原因
+          console.log(error.response.data.message);
+          // 可以展開看到錯誤訊息
+          console.dir(error);
+        })
+
+    }
+
+    checkBtn.addEventListener('click', checkLogin);
+    function checkLogin(params) {
+      // #3 取得 Token（Token 僅需要設定一次）
+      // hexToken與上方相同
+      const token = document.cookie.replace(/(?:(?:^|.*;\s*)hexToken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+      console.log(token);
+
+      // 夾帶token至headers
+      // axios關鍵字為AUTH
+      axios.defaults.headers.common['Authorization'] = token;
+      // #4  確認是否登入
+      axios.post(`${url}/api/user/check`)
+        .then((res) => {
+          console.log(res.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        })
+    }
+    // 若不要每次都需取得一次token，直接放在外面宣告即可
+    // const token = document.cookie.replace(/(?:(?:^|.*;\s*)hexToken\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+    //   console.log(token);
+
+    getProductsBtn.addEventListener('click', getProducts)
+    function getProducts() {
+      // #5 取得後台產品列表
+      axios.get(`${url}/api/${path}/admin/products`)
+        .then((res) => {
+          console.log(res.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        })
+    }
+
+
+    addProductBtn.addEventListener('click', addProduct)
+    function addProduct() {
+
+      const product = {
+        data: {
+          title: '[賣]動物園造型衣服5',
+          category: '衣服2',
+          origin_price: 100,
+          price: 300,
+          unit: '個',
+          description: 'Sit down please 名設計師設計',
+          content: '這是內容',
+          is_enabled: 1,
+          imageUrl: 'https://images.unsplash.com/photo-1573662012516-5cb4399006e7?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1267&q=80'
+        }
+      }
+
+      // #6 新增一個產品(需夾帶資料，所以要在post位置後寫product)
+      axios.post(`${url}/api/${path}/admin/product`, product)
+        .then((res) => {
+          console.log(res.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        })
+    }
+
+
+    delProductBtn.addEventListener('click', removeProduct)
+    // -MwC3G6YUG2In44blt2p
+    function removeProduct() {
+      // #7 刪除一個產品
+      axios.delete(`${url}/api/${path}/admin/product/-Mz__pfHunAXYMIRBnL3`)
+        .then((res) => {
+          console.log(res.data);
+        })
+        .catch((error) => {
+          console.log(error);
+        })
+    }
+
+  </script>
+</body>
+
+</html>
